@@ -94,3 +94,49 @@ Catatan: GitHub bisa menunda eksekusi beberapa menit saat server sedang sibuk, d
 - **Jam:** Cara A ubah `hour=16, minute=30`. Cara B ubah cron `30 9 * * 1-5` — ingat cron GitHub pakai UTC, jadi 09.30 UTC = 16.30 WIB.
 - **Hari:** `days=(0,1,2,3,4)` / `1-5` berarti Senin–Jumat. Kalau mau setiap hari, pakai `days=(0,1,2,3,4,5,6)` / `1-7` (atau `*`).
 - **Libur nasional:** kedua cara belum mengenali tanggal merah. Kalau mau skip libur, beri tahu saya, nanti saya tambahkan daftar libur atau pengecekan kalender.
+
+---
+
+## Lampiran: isi `.github/workflows/reminder.yml`
+
+File workflow belum bisa di-upload lewat API karena token GitHub yang dipakai belum memiliki scope `workflow`. Untuk menambahkannya lewat API, jalankan dulu:
+
+```bash
+gh auth refresh -s workflow --hostname github.com
+```
+
+Atau buat file `.github/workflows/reminder.yml` di repository dengan isi berikut:
+
+```yaml
+name: Pengingat Presensi
+
+# 16.30 WIB = 09.30 UTC. Tidak ada perpindahan hari.
+# 1-5 = Senin-Jumat (UTC).
+on:
+  schedule:
+    - cron: "30 9 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  kirim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kirim pengingat ke Telegram
+        env:
+          TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          PESAN=$(cat <<'EOF'
+          ⏰ Pengingat presensi 16.30 WIB
+
+          Sudah presensi hari ini?
+          • Istri — MAN 2 Cilegon
+          • Saya — Universitas Telkom
+
+          Jangan lupa ya ✅
+          EOF
+          )
+          curl -sS -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT_ID}" \
+            --data-urlencode "text=${PESAN}"
+```
