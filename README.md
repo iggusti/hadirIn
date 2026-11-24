@@ -130,8 +130,8 @@ jobs:
           ⏰ Pengingat presensi 16.30 WIB
 
           Sudah presensi hari ini?
-          • Istri — MAN 2 Cilegon
-          • Saya — Universitas Telkom
+          • Nia — MAN 2 Cilegon
+          • Ilham — Universitas Telkom
 
           Jangan lupa ya ✅
           EOF
