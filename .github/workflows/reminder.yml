@@ -1,0 +1,31 @@
+name: Pengingat Presensi
+
+# 16.30 WIB = 09.30 UTC. Tidak ada perpindahan hari.
+# 1-5 = Senin-Jumat (UTC).
+on:
+  schedule:
+    - cron: "30 9 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  kirim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kirim pengingat ke Telegram
+        env:
+          TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          PESAN=$(cat <<'EOF'
+          ⏰ Pengingat presensi 16.30 WIB
+
+          Sudah presensi hari ini?
+          • Istri — MAN 2 Cilegon
+          • Saya — Universitas Telkom
+
+          Jangan lupa ya ✅
+          EOF
+          )
+          curl -sS -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT_ID}" \
+            --data-urlencode "text=${PESAN}"
