@@ -1,20 +1,29 @@
-name: Pengingat Presensi
+name: Attendance Reminder
 
 # UTC -> WIB (UTC+7)
-# 09.30, 10.30, 11.30, 12.30, 13.30 UTC = 16.30 s.d. 20.30 WIB
-# 14.00 UTC = 21.00 WIB (batas terakhir)
-# 1-5 = Senin-Jumat
+# 09:30, 10:30, 11:30, 12:30, 13:30 UTC = 16:30 to 20:30 WIB
+# 14:00 UTC = 21:00 WIB (final reminder)
+# 1-5 = Monday to Friday
 on:
   schedule:
     - cron: "30 9,10,11,12,13 * * 1-5"
     - cron: "0 14 * * 1-5"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Send even outside 16:30-21:00 WIB"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Test without sending messages or changing state"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
-  pengingat:
+  remind:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,12 +32,15 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Jalankan bot pengingat
+      - name: Run attendance bot
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
           ILHAM_ID: ${{ secrets.ILHAM_ID }}
           NIA_ID: ${{ secrets.NIA_ID }}
+          NIA_ID_2: ${{ secrets.NIA_ID_2 }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-        run: python presensi_bot.py
+          FORCE: ${{ inputs.force }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: python attendance_bot.py
