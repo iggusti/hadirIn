@@ -1,142 +1,57 @@
-# hadirIn — Pengingat presensi Telegram (16.30 WIB)
+# hadirIn — Pengingat presensi Telegram
 
-Bot mengirim satu pesan pengingat setiap **Senin–Jumat pukul 16.30 WIB** ke chat yang dipakai berdua (Anda + istri). Isi pesan menyebut tempat kerja masing-masing: MAN 2 Cilegon dan Universitas Telkom.
+Bot Telegram yang mengingatkan **Ilham** dan **Nia** untuk presensi setiap hari kerja.
 
-Pilih **salah satu** cara di bawah.
+## Cara kerja
 
----
+- Mulai **16.30 WIB**, bot kirim pengingat ke grup berisi Ilham + Nia + bot.
+- Setiap **1 jam** setelahnya (17.30, 18.30, 19.30, 20.30, dan terakhir **21.00 WIB**), bot cek siapa yang sudah membalas di grup.
+- Yang **sudah balas** tidak diingatkan lagi. Yang **belum balas** tetap dapat pengingat.
+- Kalau dua-duanya sudah balas, bot **berhenti** sampai hari kerja berikutnya.
+- Berlaku **Senin–Jumat** saja. State reset otomatis tiap hari jam 16.30 WIB.
 
-## Persiapan yang sama untuk kedua cara
+Contoh pesan lanjutan kalau Nia belum balas:
 
-### 1. Pastikan bot sudah ada
-Jika belum, buka Telegram, cari **@BotFather**, kirim `/newbot`, ikuti instruksi, dan simpan **token** yang diberikan. Bot Anda yang sekarang sudah punya token — pakai token itu.
+```
+⏰ Pengingat presensi
 
-### 2. Dapatkan CHAT_ID
-Tambahkan bot ke chat yang dipakai berdua. Bisa grup berisi Anda, istri, dan bot, atau chat private jika memang hanya itu yang dipakai.
-
-Cara paling mudah:
-
-1. Di chat tersebut, kirim pesan apa saja (misalnya `halo`).
-2. Buka di browser: `https://api.telegram.org/bot<TOKEN_ANDA>/getUpdates`
-3. Cari bagian `"chat": {"id": ...}`. Angka itulah `CHAT_ID`.
-   - Chat private: angka positif, misal `123456789`
-   - Grup: angka negatif biasanya diawali `-100`, misal `-1001234567890`
-
-> Chat ID itu unik untuk setiap chat. Kalau bot dipindah ke grup lain, ID-nya berubah.
-
----
-
-## Cara A — Bot Python (butuh perangkat yang menyala terus)
-
-Cocok kalau punya VPS, Raspberry Pi, atau komputer yang tidak dimatikan. Mudah dikembangkan kalau nanti mau ada tombol check-in.
-
-```bash
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-cp .env.example .env
-# Edit .env, isi BOT_TOKEN dan CHAT_ID
-
-# Supaya env variable terbaca:
-set -a && source .env && set +a   # Windows: pakai python-dotenv atau set manual
-python reminder_bot.py
+Belum balas: Nia.
+Sudah presensi? Balas di grup ya ✅
 ```
 
-Uji dengan mengirim `/test` ke bot — pengingat contoh akan langsung muncul. `/start` menampilkan chat ID dari chat tempat perintah dikirim.
+## Arsitektur
 
-Supaya tetap jalan setelah terminal ditutup, misalnya dengan systemd. Contoh `/etc/systemd/system/presensi.service`:
+- `presensi_bot.py` — logika utama: baca `getUpdates`, cocokkan user ID, kirim pengingat, simpan state.
+- `state.json` — disimpan otomatis di repo berisi tanggal, `offset` Telegram, daftar yang sudah balas, dan waktu kirim terakhir. File ini tidak berisi token.
+- `.github/workflows/reminder.yml` — penjadwal GitHub Actions.
 
-```ini
-[Unit]
-Description=Pengingat presensi Telegram
-After=network-online.target
+Jadwal cron (GitHub Actions memakai UTC):
 
-[Service]
-Type=simple
-WorkingDirectory=/path/ke/folder/ini
-EnvironmentFile=/path/ke/folder/ini/.env
-ExecStart=/path/ke/folder/ini/venv/bin/python /path/ke/folder/ini/reminder_bot.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
+```
+30 9,10,11,12,13 * * 1-5   -> 16.30-20.30 WIB
+0 14 * * 1-5               -> 21.00 WIB (batas terakhir)
 ```
 
-Lalu:
+## GitHub Secrets yang dipakai
 
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now presensi
-sudo systemctl status presensi
-```
+| Secret | Isi |
+| --- | --- |
+| `BOT_TOKEN` | Token bot dari @BotFather |
+| `CHAT_ID` | ID grup Telegram (`-5386255651`) |
+| `ILHAM_ID` | Telegram user ID Ilham (`959004639`) |
+| `NIA_ID` | Telegram user ID Nia (`949805387`) |
 
----
+Workflow memakai `GITHUB_TOKEN` bawaan dengan izin `contents: write` untuk menyimpan `state.json`.
 
-## Cara B — GitHub Actions (tanpa server, gratis)
+## Uji coba
 
-Cocok kalau tidak mau menyalakan komputer/VPS 24 jam. Jadwal dijalankan oleh GitHub.
+Buka tab **Actions** → pilih **Pengingat Presensi** → **Run workflow**.
 
-1. Buat repository GitHub (boleh private), upload file `.github/workflows/reminder.yml` dari folder ini.
-2. Di repository: **Settings → Secrets and variables → Actions → New repository secret**
-   - Nama `BOT_TOKEN`, isi token bot
-   - Nama `CHAT_ID`, isi chat ID dari langkah persiapan
-3. Buka tab **Actions**, pilih workflow **Pengingat Presensi**, klik **Run workflow** untuk uji coba. Kalau pesan masuk, jadwal otomatisnya aktif.
+Catatan: run manual di luar jam 16.30–21.00 tetap aman — script hanya menganggap "hari ini" dimulai pukul 16.30 WIB, dan pengiriman dibatasi minimal 50 menit sekali supaya tidak spam.
 
-Catatan: GitHub bisa menunda eksekusi beberapa menit saat server sedang sibuk, dan scheduled workflow bisa mati otomatis setelah ~60 hari repo tidak ada aktivitas. Untuk pengingat presensi, keterlambatan beberapa menit biasanya masih acceptable, tapi kalau harus tepat 16.30, pakai Cara A.
+## Catatan
 
----
-
-## Menyesuaikan pesan atau jadwal
-
-- **Isi pesan:** ubah variabel `PESAN` di `reminder_bot.py` (Cara A) atau blok `PESAN` di `reminder.yml` (Cara B).
-- **Jam:** Cara A ubah `hour=16, minute=30`. Cara B ubah cron `30 9 * * 1-5` — ingat cron GitHub pakai UTC, jadi 09.30 UTC = 16.30 WIB.
-- **Hari:** `days=(0,1,2,3,4)` / `1-5` berarti Senin–Jumat. Kalau mau setiap hari, pakai `days=(0,1,2,3,4,5,6)` / `1-7` (atau `*`).
-- **Libur nasional:** kedua cara belum mengenali tanggal merah. Kalau mau skip libur, beri tahu saya, nanti saya tambahkan daftar libur atau pengecekan kalender.
-
----
-
-## Lampiran: isi `.github/workflows/reminder.yml`
-
-File workflow belum bisa di-upload lewat API karena token GitHub yang dipakai belum memiliki scope `workflow`. Untuk menambahkannya lewat API, jalankan dulu:
-
-```bash
-gh auth refresh -s workflow --hostname github.com
-```
-
-Atau buat file `.github/workflows/reminder.yml` di repository dengan isi berikut:
-
-```yaml
-name: Pengingat Presensi
-
-# 16.30 WIB = 09.30 UTC. Tidak ada perpindahan hari.
-# 1-5 = Senin-Jumat (UTC).
-on:
-  schedule:
-    - cron: "30 9 * * 1-5"
-  workflow_dispatch:
-
-jobs:
-  kirim:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Kirim pengingat ke Telegram
-        env:
-          TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: |
-          PESAN=$(cat <<'EOF'
-          ⏰ Pengingat presensi 16.30 WIB
-
-          Sudah presensi hari ini?
-          • Nia — MAN 2 Cilegon
-          • Ilham — Universitas Telkom
-
-          Jangan lupa ya ✅
-          EOF
-          )
-          curl -sS -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
-            --data-urlencode "chat_id=${CHAT_ID}" \
-            --data-urlencode "text=${PESAN}"
-```
+- GitHub Actions bisa menunda scheduled run beberapa menit saat sedang sibuk.
+- Scheduled workflow bisa nonaktif otomatis setelah ~60 hari tanpa aktivitas di repo.
+- `reminder_bot.py` adalah versi lama (pengingat sekali jam 16.30, tanpa eskalasi). Versi yang aktif sekarang adalah `presensi_bot.py`.
+- Jangan commit file `.env`. Token bot harus tetap hanya ada di GitHub Secrets.
