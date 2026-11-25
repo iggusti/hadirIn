@@ -30,12 +30,14 @@ Have you checked in? Reply in the group ✅
 
 ## Schedule
 
-GitHub Actions uses UTC:
+The schedule uses the `Asia/Jakarta` timezone directly, so no UTC conversion is needed:
 
 ```
-30 9,10,11,12,13 * * 1-5   -> 16:30-20:30 WIB
-0 14 * * 1-5               -> 21:00 WIB (final reminder)
+30 16-20 * * 1-5   -> 16:30, 17:30, 18:30, 19:30, 20:30 WIB
+0 21 * * 1-5       -> 21:00 WIB (final reminder)
 ```
+
+GitHub Actions schedules are best-effort and can be delayed or dropped during peak load.
 
 ## GitHub Secrets
 
