@@ -42,10 +42,10 @@ GitHub Actions uses UTC:
 | Secret | Value |
 | --- | --- |
 | `BOT_TOKEN` | Bot token from @BotFather |
-| `CHAT_ID` | Telegram group ID (`-5386255651`) |
-| `ILHAM_ID` | Ilham's Telegram user ID (`959004639`) |
-| `NIA_ID` | Nia's first Telegram user ID (`949805387`) |
-| `NIA_ID_2` | Nia's second Telegram user ID (`5959164056`) |
+| `CHAT_ID` | Telegram group ID where reminders are sent |
+| `ILHAM_ID` | Ilham's Telegram user ID |
+| `NIA_ID` | Nia's first Telegram user ID |
+| `NIA_ID_2` | Nia's second Telegram user ID |
 
 Nia has two accounts; a reply from either one counts as a reply from Nia.
 
