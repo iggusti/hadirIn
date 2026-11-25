@@ -1,57 +1,69 @@
-# hadirIn — Pengingat presensi Telegram
+# hadirIn — Telegram Attendance Reminder
 
-Bot Telegram yang mengingatkan **Ilham** dan **Nia** untuk presensi setiap hari kerja.
+A Telegram bot that reminds **Ilham** and **Nia** to check in for attendance on weekdays.
 
-## Cara kerja
+## How it works
 
-- Mulai **16.30 WIB**, bot kirim pengingat ke grup berisi Ilham + Nia + bot.
-- Setiap **1 jam** setelahnya (17.30, 18.30, 19.30, 20.30, dan terakhir **21.00 WIB**), bot cek siapa yang sudah membalas di grup.
-- Yang **sudah balas** tidak diingatkan lagi. Yang **belum balas** tetap dapat pengingat.
-- Kalau dua-duanya sudah balas, bot **berhenti** sampai hari kerja berikutnya.
-- Berlaku **Senin–Jumat** saja. State reset otomatis tiap hari jam 16.30 WIB.
+- At **16:30 WIB**, the bot sends a reminder to the group with Ilham, Nia, and the bot.
+- Every hour after that (17:30, 18:30, 19:30, 20:30, and finally **21:00 WIB**), the bot checks who has replied in the group.
+- Anyone who has already replied is no longer reminded. Anyone who has not replied keeps getting reminders.
+- Once both have replied, the bot stops until the next weekday.
+- Runs **Monday to Friday** only. State resets automatically at 16:30 WIB each day.
 
-Contoh pesan lanjutan kalau Nia belum balas:
-
-```
-⏰ Pengingat presensi
-
-Belum balas: Nia.
-Sudah presensi? Balas di grup ya ✅
-```
-
-## Arsitektur
-
-- `presensi_bot.py` — logika utama: baca `getUpdates`, cocokkan user ID, kirim pengingat, simpan state.
-- `state.json` — disimpan otomatis di repo berisi tanggal, `offset` Telegram, daftar yang sudah balas, dan waktu kirim terakhir. File ini tidak berisi token.
-- `.github/workflows/reminder.yml` — penjadwal GitHub Actions.
-
-Jadwal cron (GitHub Actions memakai UTC):
+Example follow-up message when Nia has not replied:
 
 ```
-30 9,10,11,12,13 * * 1-5   -> 16.30-20.30 WIB
-0 14 * * 1-5               -> 21.00 WIB (batas terakhir)
+⏰ Attendance reminder
+
+Still no reply from: Nia.
+Have you checked in? Reply in the group ✅
 ```
 
-## GitHub Secrets yang dipakai
+## Files
 
-| Secret | Isi |
+| File | Purpose |
 | --- | --- |
-| `BOT_TOKEN` | Token bot dari @BotFather |
-| `CHAT_ID` | ID grup Telegram (`-5386255651`) |
-| `ILHAM_ID` | Telegram user ID Ilham (`959004639`) |
-| `NIA_ID` | Telegram user ID Nia (`949805387`) |
+| `attendance_bot.py` | Main logic: read updates, match user IDs, send reminders, save state. |
+| `state.json` | Created automatically in the repo. Stores the date, Telegram offset, who replied, and the last send time. Contains no tokens. |
+| `.github/workflows/reminder.yml` | GitHub Actions schedule. |
+| `simple_reminder_bot.py` | Legacy one-shot version (single 16:30 reminder, no escalation). |
 
-Workflow memakai `GITHUB_TOKEN` bawaan dengan izin `contents: write` untuk menyimpan `state.json`.
+## Schedule
 
-## Uji coba
+GitHub Actions uses UTC:
 
-Buka tab **Actions** → pilih **Pengingat Presensi** → **Run workflow**.
+```
+30 9,10,11,12,13 * * 1-5   -> 16:30-20:30 WIB
+0 14 * * 1-5               -> 21:00 WIB (final reminder)
+```
 
-Catatan: run manual di luar jam 16.30–21.00 tetap aman — script hanya menganggap "hari ini" dimulai pukul 16.30 WIB, dan pengiriman dibatasi minimal 50 menit sekali supaya tidak spam.
+## GitHub Secrets
 
-## Catatan
+| Secret | Value |
+| --- | --- |
+| `BOT_TOKEN` | Bot token from @BotFather |
+| `CHAT_ID` | Telegram group ID (`-5386255651`) |
+| `ILHAM_ID` | Ilham's Telegram user ID (`959004639`) |
+| `NIA_ID` | Nia's first Telegram user ID (`949805387`) |
+| `NIA_ID_2` | Nia's second Telegram user ID (`5959164056`) |
 
-- GitHub Actions bisa menunda scheduled run beberapa menit saat sedang sibuk.
-- Scheduled workflow bisa nonaktif otomatis setelah ~60 hari tanpa aktivitas di repo.
-- `reminder_bot.py` adalah versi lama (pengingat sekali jam 16.30, tanpa eskalasi). Versi yang aktif sekarang adalah `presensi_bot.py`.
-- Jangan commit file `.env`. Token bot harus tetap hanya ada di GitHub Secrets.
+Nia has two accounts; a reply from either one counts as a reply from Nia.
+
+The workflow uses the built-in `GITHUB_TOKEN` with `contents: write` permission to save `state.json`.
+
+## Manual run
+
+Open the **Actions** tab, select **Attendance Reminder**, then click **Run workflow**.
+
+Two optional inputs are available:
+
+- `force`: send even outside 16:30-21:00 WIB.
+- `dry_run`: exercise the logic without sending messages or changing state.
+
+Manual runs outside the reminder window are skipped by default, so they cannot send a message at the wrong time. Sends are also limited to at most once every 50 minutes to avoid duplicates.
+
+## Notes
+
+- GitHub Actions may delay scheduled runs by a few minutes during peak load.
+- Scheduled workflows can be disabled automatically after about 60 days of repository inactivity.
+- Do not commit `.env`. The bot token should only live in GitHub Secrets.
