@@ -7,7 +7,7 @@ A Telegram bot that reminds **Ilham** and **Nia** to check in for attendance on 
 - At **16:30 WIB**, the bot sends a reminder to the group with Ilham, Nia, and the bot.
 - Every hour after that (17:30, 18:30, 19:30, 20:30, and finally **21:00 WIB**), the bot checks who has replied in the group.
 - Anyone who has already replied is no longer reminded. Anyone who has not replied keeps getting reminders.
-- Once both have replied, the bot stops until the next weekday.
+- Once both have replied, the bot sends a short thank-you message and stops until the next weekday. The thank-you is sent only once per day.
 - Runs **Monday to Friday** only. State resets automatically at 16:30 WIB each day.
 
 Example follow-up message when Nia has not replied:
@@ -19,12 +19,19 @@ Still no reply from: Nia.
 Have you checked in? Reply in the group ✅
 ```
 
+Message sent once both have replied:
+
+```
+✅ Both check-ins confirmed.
+Thank you, Ilham and Nia — have a productive day.
+```
+
 ## Files
 
 | File | Purpose |
 | --- | --- |
 | `attendance_bot.py` | Main logic: read updates, match user IDs, send reminders, save state. |
-| `state.json` | Created automatically in the repo. Stores the date, Telegram offset, who replied, and the last send time. Contains no tokens. |
+| `state.json` | Created automatically in the repo. Stores the date, Telegram offset, who replied, the last send time, and whether the thank-you was sent. Contains no tokens. |
 | `.github/workflows/reminder.yml` | GitHub Actions schedule. |
 | `simple_reminder_bot.py` | Legacy one-shot version (single 16:30 reminder, no escalation). |
 
