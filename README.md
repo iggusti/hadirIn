@@ -67,3 +67,7 @@ Manual runs outside the reminder window are skipped by default, so they cannot s
 - GitHub Actions may delay scheduled runs by a few minutes during peak load.
 - Scheduled workflows can be disabled automatically after about 60 days of repository inactivity.
 - Do not commit `.env`. The bot token should only live in GitHub Secrets.
+
+## License
+
+Released under the [MIT License](LICENSE).
