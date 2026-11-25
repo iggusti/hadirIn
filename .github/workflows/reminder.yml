@@ -1,31 +1,34 @@
 name: Pengingat Presensi
 
-# 16.30 WIB = 09.30 UTC. Tidak ada perpindahan hari.
-# 1-5 = Senin-Jumat (UTC).
+# UTC -> WIB (UTC+7)
+# 09.30, 10.30, 11.30, 12.30, 13.30 UTC = 16.30 s.d. 20.30 WIB
+# 14.00 UTC = 21.00 WIB (batas terakhir)
+# 1-5 = Senin-Jumat
 on:
   schedule:
-    - cron: "30 9 * * 1-5"
+    - cron: "30 9,10,11,12,13 * * 1-5"
+    - cron: "0 14 * * 1-5"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  kirim:
+  pengingat:
     runs-on: ubuntu-latest
     steps:
-      - name: Kirim pengingat ke Telegram
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Jalankan bot pengingat
         env:
-          TOKEN: ${{ secrets.BOT_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: |
-          PESAN=$(cat <<'EOF'
-          ⏰ Pengingat presensi 16.30 WIB
-
-          Sudah presensi hari ini?
-          • Nia — MAN 2 Cilegon
-          • Ilham — Universitas Telkom
-
-          Jangan lupa ya ✅
-          EOF
-          )
-          curl -sS -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
-            --data-urlencode "chat_id=${CHAT_ID}" \
-            --data-urlencode "text=${PESAN}"
+          ILHAM_ID: ${{ secrets.ILHAM_ID }}
+          NIA_ID: ${{ secrets.NIA_ID }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: python presensi_bot.py
