@@ -88,7 +88,7 @@ def github(method, path, payload=None):
 def read_state():
     file_info = github("GET", f"contents/{STATE_FILE}")
     if not file_info:
-        return {"date": "", "offset": 0, "replied": [], "last_sent": 0}, None
+        return {"date": "", "offset": 0, "replied": [], "last_sent": 0, "thanked": False}, None
     state = json.loads(base64.b64decode(file_info["content"]).decode())
     return state, file_info["sha"]
 
@@ -119,6 +119,7 @@ def main():
             "offset": state.get("offset", 0),
             "replied": [],
             "last_sent": 0,
+            "thanked": False,
         }
 
     updates = telegram("getUpdates", {"offset": state.get("offset", 0)}).get("result", [])
@@ -168,11 +169,24 @@ def main():
             state["last_sent"] = now.timestamp()
         sent = not DRY_RUN
 
+    just_completed = not pending and not state.get("thanked", False)
+    if just_completed and allowed:
+        text = (
+            "✅ Both check-ins confirmed.\n"
+            "Thank you, Ilham and Nia — have a productive day."
+        )
+        if not DRY_RUN:
+            telegram("sendMessage", {"chat_id": CHAT_ID, "text": text})
+            state["thanked"] = True
+            state["last_sent"] = now.timestamp()
+        sent = not DRY_RUN
+
     if not DRY_RUN:
         write_state(state, sha)
     print(
         f"{now:%Y-%m-%d %H:%M WIB} | replied: {state['replied'] or '-'} | "
-        f"pending: {pending or '-'} | sent: {sent} | dry_run: {DRY_RUN}"
+        f"pending: {pending or '-'} | thanked: {state.get('thanked', False)} | "
+        f"sent: {sent} | dry_run: {DRY_RUN}"
     )
 
 
