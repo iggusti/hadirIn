@@ -1,4 +1,4 @@
-# Jangan pernah commit token bot / kredensial
+# Never commit the bot token or credentials
 .env
 .env.*
 !.env.example
