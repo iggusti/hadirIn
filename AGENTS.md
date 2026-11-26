@@ -31,7 +31,8 @@ one thank-you message and stops for the day.
    cron-job.org calling the `workflow_dispatch` endpoint hourly.
 6. The bot's own window guard prevents sends outside 16:30-21:00 WIB unless
    `FORCE=true`. `DRY_RUN=true` exercises logic without sending or writing
-   state. Use it for safe tests.
+   state, and reads Telegram updates without an offset so no reply is
+   acknowledged. Use it for safe tests.
 7. Deduplication is intentional: at most one send per 50 minutes, and one
    thank-you per day via the `thanked` flag. Do not remove these guards.
 
