@@ -34,6 +34,7 @@ Thank you, Ilham and Nia — have a productive day.
 | `state.json` | Created automatically in the repo. Stores the date, Telegram offset, who replied, the last send time, and whether the thank-you was sent. Contains no tokens. |
 | `.github/workflows/reminder.yml` | GitHub Actions schedule. |
 | `simple_reminder_bot.py` | Legacy one-shot version (single 16:30 reminder, no escalation). |
+| `AGENTS.md` | Instructions for coding agents working on this repository. |
 
 ## Schedule
 
@@ -45,6 +46,40 @@ GitHub Actions evaluates `cron` in UTC, so the schedule is written in UTC:
 ```
 
 The `timezone` option was tested but was not honoured on this repository, so explicit UTC is used instead. GitHub Actions schedules are best-effort and can be delayed or dropped during peak load.
+
+## Reliable trigger (recommended)
+
+Because the built-in `schedule` event is unreliable here, use a free
+[cron-job.org](https://cron-job.org/) job to call the `workflow_dispatch`
+endpoint hourly. A successful call returns `204 No Content`.
+
+| Setting | Value |
+| --- | --- |
+| URL | `https://api.github.com/repos/iggusti/hadirIn/actions/workflows/428908062/dispatches` |
+| Method | `POST` |
+| Header | `Authorization: Bearer <PAT>` |
+| Header | `Accept: application/vnd.github+json` |
+| Header | `X-GitHub-Api-Version: 2022-11-28` |
+| Header | `Content-Type: application/json` |
+| Header | `User-Agent: hadirIn-cron` |
+| Body | `{"ref":"main","inputs":{"force":false,"dry_run":false}}` |
+| Timezone | `Asia/Jakarta` |
+
+Create six jobs with these crontab expressions:
+
+```
+30 16 * * 1-5
+30 17 * * 1-5
+30 18 * * 1-5
+30 19 * * 1-5
+30 20 * * 1-5
+0 21 * * 1-5
+```
+
+The PAT must be a fine-grained token scoped to this repository with
+**Actions: read and write**. A `403` usually means a missing `User-Agent`
+header, a wrong token, or insufficient permission. Never paste the PAT into
+this README or any tracked file.
 
 ## GitHub Secrets
 
