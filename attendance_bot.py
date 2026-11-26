@@ -122,8 +122,11 @@ def main():
             "thanked": False,
         }
 
-    updates = telegram("getUpdates", {"offset": state.get("offset", 0)}).get("result", [])
-    if updates:
+    # In dry-run mode, read updates without an offset so Telegram does not
+    # acknowledge them. Otherwise a later real run would never see those replies.
+    params = {} if DRY_RUN else {"offset": state.get("offset", 0)}
+    updates = telegram("getUpdates", params).get("result", [])
+    if updates and not DRY_RUN:
         state["offset"] = max(item["update_id"] for item in updates) + 1
 
     for item in updates:
