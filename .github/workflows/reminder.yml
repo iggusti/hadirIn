@@ -1,13 +1,13 @@
 name: Attendance Reminder
 
-# Timezone-aware schedule in Asia/Jakarta (WIB, UTC+7).
-# 16:30, 17:30, 18:30, 19:30, 20:30 and 21:00 on Monday-Friday.
+# GitHub Actions evaluates cron in UTC.
+# 09:30-13:30 UTC = 16:30-20:30 WIB (UTC+7)
+# 14:00 UTC = 21:00 WIB (final reminder)
+# 1-5 = Monday to Friday
 on:
   schedule:
-    - cron: "30 16-20 * * 1-5"
-      timezone: Asia/Jakarta
-    - cron: "0 21 * * 1-5"
-      timezone: Asia/Jakarta
+    - cron: "30 9,10,11,12,13 * * 1-5"
+    - cron: "0 14 * * 1-5"
   workflow_dispatch:
     inputs:
       force:
