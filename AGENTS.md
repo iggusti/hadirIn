@@ -25,16 +25,18 @@ one thank-you message and stops for the day.
 3. Never commit `.env`.
 4. GitHub Actions evaluates `cron` in UTC. The `timezone` option was tested and
    was not honoured on this repository. Use explicit UTC values:
-   - `30 9,10,11,12,13 * * 1-5` = 16:30-20:30 WIB
-   - `0 14 * * 1-5` = 21:00 WIB
+   - `30 9 * * 1-5` = 16:30 WIB (first reminder)
+   - `0,30 10-13 * * 1-5` = 17:00-20:30 WIB, every 30 minutes
+   - `0 14 * * 1-5` = 21:00 WIB (final reminder)
 5. GitHub `schedule` events are not reliable here. The recommended trigger is
-   cron-job.org calling the `workflow_dispatch` endpoint hourly.
+   cron-job.org calling the `workflow_dispatch` endpoint every 30 minutes.
 6. The bot's own window guard prevents sends outside 16:30-21:00 WIB unless
-   `FORCE=true`. `DRY_RUN=true` exercises logic without sending or writing
-   state, and reads Telegram updates without an offset so no reply is
-   acknowledged. Use it for safe tests.
-7. Deduplication is intentional: at most one send per 50 minutes, and one
-   thank-you per day via the `thanked` flag. Do not remove these guards.
+   `FORCE=true`, which also overrides the 30-minute slot guard. `DRY_RUN=true`
+   exercises logic without sending or writing state, and reads Telegram updates
+   without an offset so no reply is acknowledged. Use it for safe tests.
+7. Deduplication is slot-based: at most one reminder per 30-minute slot, and one
+   thank-you per day via the `thanked` flag. Anyone still pending must be
+   reminded at every new slot; do not revert to a time-based interval.
 
 ## Environment notes for this workspace
 
