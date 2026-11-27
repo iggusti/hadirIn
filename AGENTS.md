@@ -46,6 +46,8 @@ one thank-you message and stops for the day.
   `workflow` scope. Refresh it with `gh auth refresh -s workflow --hostname github.com`.
 - Verify workflow changes with `gh api repos/iggusti/hadirIn/actions/workflows`
   and inspect runs with `gh run view <id> --log`.
+- The workflow uses a `concurrency` group so overlapping triggers cannot
+  double-send before state is written.
 
 ## Safe test command
 
