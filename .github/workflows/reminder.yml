@@ -13,17 +13,13 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: "Send even outside the window or within the same 30-minute slot"
+        description: "Send even outside 16:30-21:30 WIB or within the same slot"
         type: boolean
         default: false
       dry_run:
         description: "Test without sending messages or changing state"
         type: boolean
         default: false
-
-concurrency:
-  group: attendance-reminder
-  cancel-in-progress: false
 
 permissions:
   contents: write
