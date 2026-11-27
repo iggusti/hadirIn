@@ -27,7 +27,7 @@ REPO = os.environ["REPO"]
 STATE_FILE = "state.json"
 START_HOUR, START_MINUTE = 16, 30
 END_HOUR, END_MINUTE = 21, 0
-MIN_INTERVAL_MINUTES = 50  # guard against duplicate manual runs
+SLOT_SECONDS = 30 * 60  # at most one reminder per 30-minute slot
 
 
 def env_flag(name):
@@ -119,6 +119,7 @@ def main():
             "offset": state.get("offset", 0),
             "replied": [],
             "last_sent": 0,
+            "last_slot": -1,
             "thanked": False,
         }
 
@@ -147,13 +148,13 @@ def main():
     pending = list(
         dict.fromkeys(name for name in PEOPLE.values() if name not in state["replied"])
     )
-    last_sent = state.get("last_sent", 0)
-    interval_ok = now.timestamp() - last_sent >= MIN_INTERVAL_MINUTES * 60
+    slot = int(now.timestamp() // SLOT_SECONDS)
+    slot_ready = slot > state.get("last_slot", -1)
     in_window = dt.time(START_HOUR, START_MINUTE) <= now.time() <= dt.time(END_HOUR, END_MINUTE)
     allowed = in_window or FORCE
 
     sent = False
-    if pending and (first_run or interval_ok) and allowed:
+    if pending and (first_run or slot_ready or FORCE) and allowed:
         who = ", ".join(pending)
         if first_run:
             text = (
@@ -170,6 +171,7 @@ def main():
         if not DRY_RUN:
             telegram("sendMessage", {"chat_id": CHAT_ID, "text": text})
             state["last_sent"] = now.timestamp()
+            state["last_slot"] = slot
         sent = not DRY_RUN
 
     just_completed = not pending and not state.get("thanked", False)
@@ -182,6 +184,7 @@ def main():
             telegram("sendMessage", {"chat_id": CHAT_ID, "text": text})
             state["thanked"] = True
             state["last_sent"] = now.timestamp()
+            state["last_slot"] = slot
         sent = not DRY_RUN
 
     if not DRY_RUN:
@@ -189,7 +192,7 @@ def main():
     print(
         f"{now:%Y-%m-%d %H:%M WIB} | replied: {state['replied'] or '-'} | "
         f"pending: {pending or '-'} | thanked: {state.get('thanked', False)} | "
-        f"sent: {sent} | dry_run: {DRY_RUN}"
+        f"slot: {slot} | sent: {sent} | dry_run: {DRY_RUN}"
     )
 
 
