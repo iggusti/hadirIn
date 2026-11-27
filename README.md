@@ -99,14 +99,14 @@ Open the **Actions** tab, select **Attendance Reminder**, then click **Run workf
 
 Two optional inputs are available:
 
-- `force`: send even outside 16:30-21:00 WIB or within the same 30-minute slot.
+- `force`: send even outside 16:30-21:30 WIB or within the same 30-minute slot.
 - `dry_run`: exercise the logic without sending messages or changing state.
 
 Manual runs outside the reminder window are skipped by default. Reminders are limited to at most one per 30-minute slot, so duplicate triggers in the same slot do not send twice. A new slot always sends again if somebody is still pending.
 
 ## Notes
 
-- GitHub Actions may delay scheduled runs by a few minutes during peak load.
+- GitHub Actions may delay scheduled runs by a few minutes during peak load. The 21:00 slot is accepted until 21:30 WIB so a late trigger is not lost.
 - Scheduled workflows can be disabled automatically after about 60 days of repository inactivity.
 - Do not commit `.env`. The bot token should only live in GitHub Secrets.
 
