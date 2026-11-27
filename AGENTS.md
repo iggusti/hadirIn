@@ -30,8 +30,9 @@ one thank-you message and stops for the day.
    - `0 14 * * 1-5` = 21:00 WIB (final reminder)
 5. GitHub `schedule` events are not reliable here. The recommended trigger is
    cron-job.org calling the `workflow_dispatch` endpoint every 30 minutes.
-6. The bot's own window guard prevents sends outside 16:30-21:00 WIB unless
-   `FORCE=true`, which also overrides the 30-minute slot guard. `DRY_RUN=true`
+6. The bot's own window guard prevents sends outside 16:30-21:30 WIB (the
+   21:00 slot has a grace period for late triggers) unless `FORCE=true`, which
+   also overrides the 30-minute slot guard. `DRY_RUN=true`
    exercises logic without sending or writing state, and reads Telegram updates
    without an offset so no reply is acknowledged. Use it for safe tests.
 7. Deduplication is slot-based: at most one reminder per 30-minute slot, and one
