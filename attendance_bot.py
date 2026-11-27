@@ -26,7 +26,7 @@ REPO = os.environ["REPO"]
 
 STATE_FILE = "state.json"
 START_HOUR, START_MINUTE = 16, 30
-END_HOUR, END_MINUTE = 21, 0
+END_HOUR, END_MINUTE = 21, 30  # final 21:00 slot, with grace for late triggers
 SLOT_SECONDS = 30 * 60  # at most one reminder per 30-minute slot
 
 
